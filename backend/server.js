@@ -43,6 +43,12 @@ connectDatabase();
 // Set up routes
 app.use('/api', apiRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+// Vercel deployment: Export the app instead of listening
+if (process.env.NODE_ENV === 'production') {
+  module.exports = app;
+} else {
+  // Local development: Start the server
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}
