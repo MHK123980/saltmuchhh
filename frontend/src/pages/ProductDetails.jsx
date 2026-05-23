@@ -58,11 +58,15 @@ export default function ProductDetails() {
   };
 
   const handleAddonChange = (addonName, isChecked) => {
+    const safeSelectedAddons = Array.isArray(selectedAddons) ? selectedAddons : [];
+
     if (isChecked) {
-      const addon = config.addons.find(a => a.name === addonName);
-      setSelectedAddons([...selectedAddons, addon]);
+      const addon = config?.addons?.find(a => a?.name === addonName);
+      // Avoid adding undefined if addon name isn't found
+      if (!addon) return;
+      setSelectedAddons([...safeSelectedAddons, addon]);
     } else {
-      setSelectedAddons((selectedAddons || []).filter(a => a.name !== addonName));
+      setSelectedAddons(safeSelectedAddons.filter(a => a?.name !== addonName));
     }
   };
 
@@ -203,7 +207,8 @@ export default function ProductDetails() {
                 <label>Optional Add-ons:</label>
                 {config.addons && config.addons.length > 0 ? (
                   config.addons.map((addon, idx) => {
-                    const isChecked = selectedAddons.some(a => a.name === addon.name);
+                    const safeSelectedAddons = Array.isArray(selectedAddons) ? selectedAddons : [];
+                    const isChecked = safeSelectedAddons.some(a => a?.name === addon.name);
                     return (
                       <label key={idx} className="checkbox-label">
                         <input 

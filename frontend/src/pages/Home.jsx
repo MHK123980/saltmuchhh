@@ -80,7 +80,10 @@ export default function Home() {
     return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
   };
 
- const filteredProducts = (products || []).filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+ const filteredProducts = Array.isArray(products)
+  ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  : [];
+
   return (
     <div className="home-container">
       <div className="oven-background"></div>
