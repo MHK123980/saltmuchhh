@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './Admin.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 export default function Admin() {
   const [token, setToken] = useState(sessionStorage.getItem('adminToken'));

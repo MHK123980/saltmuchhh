@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import './ProductDetails.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -48,7 +48,7 @@ export default function ProductDetails() {
       setProduct(foundProduct);
       
       if (foundProduct && foundProduct.images && foundProduct.images.length > 0) {
-        setMainImage(`http://localhost:5000${foundProduct.images[0]}`);
+        setMainImage(`/${foundProduct.images[0]}`);
       } else {
         setMainImage('/placeholder.jpg');
       }
@@ -175,10 +175,10 @@ export default function ProductDetails() {
                 {product.images.map((img, idx) => (
                   <img 
                     key={idx} 
-                    src={`http://localhost:5000${img}`} 
+                    src={`/${img}`} 
                     alt="Thumbnail" 
-                    className={`thumbnail ${mainImage === `http://localhost:5000${img}` ? 'active' : ''}`}
-                    onClick={() => setMainImage(`http://localhost:5000${img}`)}
+                    className={`thumbnail ${mainImage === `/${img}` ? 'active' : ''}`}
+                    onClick={() => setMainImage(`/${img}`)}
                   />
                 ))}
               </div>

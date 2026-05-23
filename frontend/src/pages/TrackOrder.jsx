@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import './TrackOrder.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 export default function TrackOrder() {
   const navigate = useNavigate();

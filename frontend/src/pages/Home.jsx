@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './Home.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
