@@ -62,7 +62,7 @@ export default function ProductDetails() {
       const addon = config.addons.find(a => a.name === addonName);
       setSelectedAddons([...selectedAddons, addon]);
     } else {
-      setSelectedAddons(selectedAddons.filter(a => a.name !== addonName));
+      setSelectedAddons((selectedAddons || []).filter(a => a.name !== addonName));
     }
   };
 
