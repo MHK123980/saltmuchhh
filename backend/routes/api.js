@@ -10,14 +10,7 @@ const Material = require('../models/Material');
 const Counter = require('../models/Counter');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'saltmuchhh_jwt_secure_secret_fallback_key';
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Admin Login
@@ -64,7 +57,9 @@ router.get('/products', async (req, res) => {
 router.post('/products', verifyAdmin, upload.array('images', 10), async (req, res) => {
   try {
     const productData = JSON.parse(req.body.productData);
-    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+    const imagePaths = req.files.map(file => {
+      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    });
     
     // Combine existing images (if sent, e.g. during an update fake via POST, but usually just new)
     const product = new Product({
@@ -82,7 +77,9 @@ router.post('/products', verifyAdmin, upload.array('images', 10), async (req, re
 router.put('/products/:id', verifyAdmin, upload.array('images', 10), async (req, res) => {
   try {
     const productData = JSON.parse(req.body.productData);
-    const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
+    const newImagePaths = req.files.map(file => {
+      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    });
     
     // We assume productData.images contains the existing images the user kept
     const combinedImages = [...(productData.images || []), ...newImagePaths];

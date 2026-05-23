@@ -8,8 +8,8 @@ import './Home.css';
 const API_URL = '/api';
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [config, setConfig] = useState(null);
+  const [products, setProducts] = useState(JSON.parse(localStorage.getItem('saltmuchhh_products')) || []);
+  const [config, setConfig] = useState(JSON.parse(localStorage.getItem('saltmuchhh_config')) || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem('saltmuchhh_cart')) || []);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -26,8 +26,14 @@ export default function Home() {
         axios.get(`${API_URL}/products`),
         axios.get(`${API_URL}/config`)
       ]);
-      setProducts(prodRes.data);
-      setConfig(confRes.data);
+      if (Array.isArray(prodRes.data)) {
+        setProducts(prodRes.data);
+        localStorage.setItem('saltmuchhh_products', JSON.stringify(prodRes.data));
+      }
+      if (confRes.data && !confRes.data.includes?.('<!DOCTYPE html>')) {
+        setConfig(confRes.data);
+        localStorage.setItem('saltmuchhh_config', JSON.stringify(confRes.data));
+      }
     } catch(err) {
       console.error(err);
     }
@@ -174,7 +180,7 @@ export default function Home() {
 
         <div className="products-grid">
           {filteredProducts.map((product) => {
-            const mainImage = product.images && product.images.length > 0 ? `http://localhost:5000${product.images[0]}` : '/placeholder.jpg';
+            const mainImage = product.images && product.images.length > 0 ? product.images[0] : '/placeholder.jpg';
             
             // Get starting price
             let startingPrice = 0;
@@ -278,7 +284,7 @@ export default function Home() {
       <AnimatePresence>
         {orderConfirmed && (
           <motion.div className="cart-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="confirmation-section glass-panel" style={{ background: 'var(--primary-bg)', padding: '40px', borderRadius: '15px', position: 'relative' }}>
+            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="confirmation-section" style={{ background: '#ffffff', color: '#333', padding: '40px', borderRadius: '15px', position: 'relative', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
               <div className="success-icon">✓</div>
               <h2>Order Confirmed!</h2>
               <p style={{marginBottom: '10px', fontSize: '1.2rem'}}>Your Order ID: <strong style={{color: 'var(--text-main)'}}>{orderConfirmed.orderNumber}</strong></p>

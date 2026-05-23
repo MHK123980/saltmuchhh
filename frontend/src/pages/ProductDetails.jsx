@@ -12,7 +12,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState(JSON.parse(localStorage.getItem('saltmuchhh_config')) || null);
   const [mainImage, setMainImage] = useState('');
   
   const [variantIndex, setVariantIndex] = useState(0);
@@ -39,18 +39,37 @@ export default function ProductDetails() {
 
   const fetchProductAndConfig = async () => {
     try {
+      // First try to load from cached products for instant display
+      const cachedProducts = JSON.parse(localStorage.getItem('saltmuchhh_products')) || [];
+      if (cachedProducts.length > 0 && !product) {
+        const found = cachedProducts.find(p => p._id === id);
+        if (found) {
+          setProduct(found);
+          if (found.images && found.images.length > 0) setMainImage(found.images[0]);
+          else setMainImage('/placeholder.jpg');
+        }
+      }
+
       const [configRes, productRes] = await Promise.all([
         axios.get(`${API_URL}/config`),
-        axios.get(`${API_URL}/products`) // Getting all for now and finding by id
+        axios.get(`${API_URL}/products`)
       ]);
-      setConfig(configRes.data);
-      const foundProduct = productRes.data.find(p => p._id === id);
-      setProduct(foundProduct);
       
-      if (foundProduct && foundProduct.images && foundProduct.images.length > 0) {
-        setMainImage(`/${foundProduct.images[0]}`);
-      } else {
-        setMainImage('/placeholder.jpg');
+      if (configRes.data && !configRes.data.includes?.('<!DOCTYPE html>')) {
+        setConfig(configRes.data);
+        localStorage.setItem('saltmuchhh_config', JSON.stringify(configRes.data));
+      }
+      
+      if (Array.isArray(productRes.data)) {
+        localStorage.setItem('saltmuchhh_products', JSON.stringify(productRes.data));
+        const foundProduct = productRes.data.find(p => p._id === id);
+        setProduct(foundProduct);
+        
+        if (foundProduct && foundProduct.images && foundProduct.images.length > 0) {
+          setMainImage(foundProduct.images[0]);
+        } else {
+          setMainImage('/placeholder.jpg');
+        }
       }
     } catch (err) {
       toast.error('Failed to load product');
@@ -179,10 +198,10 @@ export default function ProductDetails() {
                 {product.images.map((img, idx) => (
                   <img 
                     key={idx} 
-                    src={`/${img}`} 
+                    src={img} 
                     alt="Thumbnail" 
-                    className={`thumbnail ${mainImage === `/${img}` ? 'active' : ''}`}
-                    onClick={() => setMainImage(`/${img}`)}
+                    className={`thumbnail ${mainImage === img ? 'active' : ''}`}
+                    onClick={() => setMainImage(img)}
                   />
                 ))}
               </div>
@@ -241,7 +260,7 @@ export default function ProductDetails() {
           </div>
         </main>
       ) : (
-        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="confirmation-section glass-panel">
+        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="confirmation-section" style={{ background: '#ffffff', color: '#333', padding: '40px', borderRadius: '15px', position: 'relative', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
           <div className="success-icon">✓</div>
           <h2>Order Confirmed!</h2>
           <p>Thank you for your order.</p>

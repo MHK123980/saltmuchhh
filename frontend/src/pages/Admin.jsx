@@ -740,7 +740,7 @@ export default function Admin() {
                 </div>
                 {products.map(p => (
                   <div key={p._id} className="admin-card">
-                    <img src={p.images[0] ? `http://localhost:5000${p.images[0]}` : '/placeholder.jpg'} alt={p.name} className="admin-card-img" />
+                    <img src={p.images[0] ? p.images[0] : '/placeholder.jpg'} alt={p.name} className="admin-card-img" />
                     <div style={{flex: 1}}>
                       <h4 style={{margin:0}}>{p.name}</h4>
                       <small>{p.variants.length} Variants</small>
