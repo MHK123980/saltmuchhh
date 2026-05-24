@@ -684,6 +684,7 @@ export default function Admin() {
                   <thead>
                     <tr style={{borderBottom: '2px solid #ddd'}}>
                       <th style={{paddingBottom: '10px'}}>Item</th>
+                      <th style={{paddingBottom: '10px'}}>Qty</th>
                       <th style={{paddingBottom: '10px'}}>Item Price</th>
                       <th style={{paddingBottom: '10px'}}>Add-ons</th>
                       <th style={{paddingBottom: '10px'}}>Add-ons Price</th>
@@ -700,6 +701,7 @@ export default function Admin() {
                           <strong>{item.productName}</strong><br/>
                           <small>{item.quantity} Cookies</small>
                         </td>
+                        <td style={{padding: '10px 0'}}>{item.orderQuantity || 1}</td>
                         <td style={{padding: '10px 0'}}>Rs. {itemPrice}</td>
                         <td style={{padding: '10px 0'}}>
                           {item.selectedAddons && item.selectedAddons.length > 0 ? item.selectedAddons.map(a => a.name).join(', ') : '-'}
@@ -714,7 +716,7 @@ export default function Admin() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="4" style={{textAlign: 'right', padding: '15px 10px 0 0'}}>
+                      <td colSpan="5" style={{textAlign: 'right', padding: '15px 10px 0 0'}}>
                         <h2 style={{margin: 0}}>Grand Total:</h2>
                       </td>
                       <td style={{padding: '15px 0 0 0', textAlign: 'right'}}>
@@ -888,7 +890,7 @@ export default function Admin() {
                   <React.Fragment key={idx}>
                     <tr>
                       <td>
-                        {item.productName} ({item.quantity}x)
+                        {item.productName} ({item.quantity}x){(item.orderQuantity || 1) > 1 ? ` ×${item.orderQuantity}` : ''}
                       </td>
                       <td style={{textAlign:'right'}}>Rs. {itemPrice}</td>
                     </tr>

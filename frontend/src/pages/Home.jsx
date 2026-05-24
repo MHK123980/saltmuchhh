@@ -12,6 +12,7 @@ export default function Home() {
   const [config, setConfig] = useState(JSON.parse(localStorage.getItem('saltmuchhh_config')) || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem('saltmuchhh_cart')) || []);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
@@ -22,6 +23,7 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
+      setIsLoadingProducts(true);
       const [prodRes, confRes] = await Promise.all([
         axios.get(`${API_URL}/products`),
         axios.get(`${API_URL}/config`)
@@ -36,12 +38,16 @@ export default function Home() {
       }
     } catch(err) {
       console.error(err);
+    } finally {
+      setIsLoadingProducts(false);
     }
   };
 
   useEffect(() => {
+    // Fetch fresh data in the background – cached data already shows instantly
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    // Poll less aggressively (30s instead of 5s) to save bandwidth on mobile
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -52,6 +58,16 @@ export default function Home() {
   const removeFromCart = (index) => {
     const newCart = [...cart];
     newCart.splice(index, 1);
+    setCart(newCart);
+  };
+
+  const updateCartQuantity = (index, delta) => {
+    const newCart = [...cart];
+    const item = newCart[index];
+    const newQty = (item.orderQuantity || 1) + delta;
+    if (newQty < 1) return;
+    item.orderQuantity = newQty;
+    item.price = (item.unitPrice || item.price / (item.orderQuantity || 1)) * newQty;
     setCart(newCart);
   };
 
@@ -90,6 +106,9 @@ export default function Home() {
   ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
   : [];
 
+  const shouldShowProductLoader =
+    isLoadingProducts && (products?.length || 0) === 0;
+
   return (
     <div className="home-container">
       <div className="oven-background"></div>
@@ -104,7 +123,7 @@ export default function Home() {
       {/* Cart Button - Always visible, top-right */}
       {!orderConfirmed && (
         <button className="floating-cart-btn" onClick={() => setIsCartOpen(true)}>
-          🛒 Cart <span className="cart-badge">{cart.length}</span>
+          🛒 Cart <span className="cart-badge">{cart.reduce((sum, item) => sum + (item.orderQuantity || 1), 0)}</span>
         </button>
       )}
 
@@ -179,6 +198,18 @@ export default function Home() {
         <h2 className="section-title">Our Menu</h2>
 
         <div className="products-grid">
+          {shouldShowProductLoader && (
+            <div className="cookie-loader" role="status" aria-live="polite">
+              <div className="cookie-loader__cookie" aria-hidden="true" />
+              <div className="cookie-loader__crumbs" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className="cookie-loader__text">Baking your cookies...</div>
+            </div>
+          )}
+
           {filteredProducts.map((product) => {
             const mainImage = product.images && product.images.length > 0 ? product.images[0] : '/placeholder.jpg';
             
@@ -244,9 +275,16 @@ export default function Home() {
                           <p className="addon-text">+ {item.selectedAddons.map(a => a.name).join(', ')}</p>
                         )}
                       </div>
-                      <div className="item-price">
-                        <span>Rs. {item.price}</span>
-                        <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
+                      <div className="item-actions">
+                        <div className="cart-qty-controls">
+                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, -1)}>−</button>
+                          <span className="cart-qty-value">{item.orderQuantity || 1}</span>
+                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
+                        </div>
+                        <div className="item-price">
+                          <span>Rs. {item.price}</span>
+                          <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
+                        </div>
                       </div>
                     </div>
                   ))

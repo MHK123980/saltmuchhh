@@ -17,6 +17,7 @@ export default function ProductDetails() {
   
   const [variantIndex, setVariantIndex] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState([]);
+  const [orderQuantity, setOrderQuantity] = useState(1);
   
   // Cart is managed entirely on this page for now, or just instant checkout
   // Since user requested "cart option" previously, we should keep the cart drawer, 
@@ -89,11 +90,15 @@ export default function ProductDetails() {
     }
   };
 
-  const getProductTotal = () => {
+  const getUnitPrice = () => {
     if (!product || !product.variants[variantIndex]) return 0;
     const basePrice = product.variants[variantIndex].price;
     const addonsPrice = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
     return basePrice + addonsPrice;
+  };
+
+  const getProductTotal = () => {
+    return getUnitPrice() * orderQuantity;
   };
 
   const handleAddToCart = () => {
@@ -104,18 +109,31 @@ export default function ProductDetails() {
       productId: product._id,
       productName: product.name,
       quantity: variant.quantity,
+      orderQuantity: orderQuantity,
       selectedAddons: selectedAddons,
+      unitPrice: getUnitPrice(),
       price: getProductTotal(),
       variantText: `${variant.quantity} Cookies`
     };
 
     setCart([...cart, cartItem]);
-    toast.success(`${product.name} Added to Cart!`);
+    setOrderQuantity(1);
+    toast.success(`${product.name} x${orderQuantity} Added to Cart!`);
   };
 
   const removeFromCart = (index) => {
     const newCart = [...cart];
     newCart.splice(index, 1);
+    setCart(newCart);
+  };
+
+  const updateCartQuantity = (index, delta) => {
+    const newCart = [...cart];
+    const item = newCart[index];
+    const newQty = (item.orderQuantity || 1) + delta;
+    if (newQty < 1) return;
+    item.orderQuantity = newQty;
+    item.price = item.unitPrice * newQty;
     setCart(newCart);
   };
 
@@ -174,7 +192,7 @@ export default function ProductDetails() {
       {/* Cart Button */}
       {!orderConfirmed && (
         <button className="floating-cart-btn" onClick={() => setIsCartOpen(true)}>
-          🛒 Cart <span className="cart-badge">{cart.length}</span>
+          🛒 Cart <span className="cart-badge">{cart.reduce((sum, item) => sum + (item.orderQuantity || 1), 0)}</span>
         </button>
       )}
 
@@ -245,8 +263,18 @@ export default function ProductDetails() {
               </div>
             )}
 
+            <div className="quantity-selector">
+              <label>Quantity:</label>
+              <div className="qty-controls">
+                <button type="button" className="qty-btn" onClick={() => setOrderQuantity(Math.max(1, orderQuantity - 1))}>−</button>
+                <span className="qty-value">{orderQuantity}</span>
+                <button type="button" className="qty-btn" onClick={() => setOrderQuantity(orderQuantity + 1)}>+</button>
+              </div>
+            </div>
+
             <div className="total-display">
               Total: Rs. {getProductTotal()}
+              {orderQuantity > 1 && <span className="unit-price-hint"> (Rs. {getUnitPrice()} each)</span>}
             </div>
 
             <button 
@@ -255,7 +283,7 @@ export default function ProductDetails() {
               disabled={!storeOpen}
               style={!storeOpen ? { backgroundColor: '#666', cursor: 'not-allowed' } : {}}
             >
-              {storeOpen ? 'Add to Cart' : 'Opening Soon'}
+              {storeOpen ? `Add to Cart${orderQuantity > 1 ? ` (×${orderQuantity})` : ''}` : 'Opening Soon'}
             </button>
           </div>
         </main>
@@ -291,9 +319,16 @@ export default function ProductDetails() {
                           <p className="addon-text">+ {item.selectedAddons.map(a => a.name).join(', ')}</p>
                         )}
                       </div>
-                      <div className="item-price">
-                        <span>Rs. {item.price}</span>
-                        <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
+                      <div className="item-actions">
+                        <div className="cart-qty-controls">
+                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, -1)}>−</button>
+                          <span className="cart-qty-value">{item.orderQuantity || 1}</span>
+                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
+                        </div>
+                        <div className="item-price">
+                          <span>Rs. {item.price}</span>
+                          <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
+                        </div>
                       </div>
                     </div>
                   ))
