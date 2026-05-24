@@ -77,6 +77,28 @@ export default function Home() {
     setCart(newCart);
   };
 
+  const updateCartAddonQuantity = (itemIndex, addonIndex, delta) => {
+    const newCart = [...cart];
+    const item = {
+      ...newCart[itemIndex],
+      selectedAddons: [...(newCart[itemIndex].selectedAddons || [])],
+    };
+    const addon = item.selectedAddons[addonIndex];
+    if (!addon) return;
+
+    const newQty = (addon.quantity || 1) + delta;
+    if (newQty < 1) {
+      item.selectedAddons.splice(addonIndex, 1);
+    } else {
+      item.selectedAddons[addonIndex] = { ...addon, quantity: newQty };
+    }
+
+    item.unitPrice = getCartItemUnitPrice(item);
+    item.price = recalculateCartItemPrice(item);
+    newCart[itemIndex] = item;
+    setCart(newCart);
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
   const submitOrder = async (e) => {
@@ -283,27 +305,45 @@ export default function Home() {
                           <span className="item-detail-price">Rs. {breakdown.variantLineTotal}</span>
                         </div>
                         {breakdown.addonLines.map((addon, addonIdx) => (
-                          <div key={`${addon.name}-${addonIdx}`} className="item-detail-row">
-                            <span className="addon-text">
-                              + {addon.name}
-                              {addon.quantity > 1 ? ` ×${addon.quantity}` : ''}
-                            </span>
+                          <div key={`${addon.name}-${addonIdx}`} className="item-detail-row addon-detail-row">
+                            <div className="addon-row-left">
+                              <span className="addon-text">+ {addon.name}</span>
+                              <div className="cart-addon-qty-controls">
+                                <button
+                                  type="button"
+                                  className="cart-addon-qty-btn"
+                                  onClick={() => updateCartAddonQuantity(idx, addonIdx, -1)}
+                                >
+                                  −
+                                </button>
+                                <span className="cart-addon-qty-value">{addon.quantity}</span>
+                                <button
+                                  type="button"
+                                  className="cart-addon-qty-btn"
+                                  onClick={() => updateCartAddonQuantity(idx, addonIdx, 1)}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
                             <span className="item-detail-price">Rs. {addon.total}</span>
                           </div>
                         ))}
                       </div>
                       <div className="item-actions">
-                        <div className="cart-qty-block">
-                          <span className="cart-qty-label">Deal Quantity!</span>
-                          <div className="cart-qty-controls">
-                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, -1)}>−</button>
-                          <span className="cart-qty-value">{item.orderQuantity || 1}</span>
-                          <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
+                        <div className="cart-controls-column">
+                          <div className="cart-qty-block">
+                            <span className="cart-qty-label">Deal Quantity!</span>
+                            <div className="cart-qty-controls">
+                            <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, -1)}>−</button>
+                            <span className="cart-qty-value">{item.orderQuantity || 1}</span>
+                            <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="cart-line-total">
-                          <span>Total Amount</span>
-                          <span>Rs. {breakdown.lineTotal}</span>
+                          <div className="cart-line-total">
+                            <span className="cart-line-total-label">Total Amount:</span>
+                            <span className="cart-line-total-value">Rs. {breakdown.lineTotal}</span>
+                          </div>
                         </div>
                         <div className="item-price">
                           <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
