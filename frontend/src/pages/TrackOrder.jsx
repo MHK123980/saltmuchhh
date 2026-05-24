@@ -74,7 +74,11 @@ export default function TrackOrder() {
                   <li key={idx}>
                     {item.quantity}x {item.productName} - Rs. {item.price}
                     {item.selectedAddons?.length > 0 && (
-                      <div className="addon-list">Add-ons: {item.selectedAddons.map(a => a.name).join(', ')}</div>
+                      <div className="addon-list">
+                        Add-ons: {item.selectedAddons.map(a =>
+                          `${a.name}${(a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''}`
+                        ).join(', ')}
+                      </div>
                     )}
                   </li>
                 ))}

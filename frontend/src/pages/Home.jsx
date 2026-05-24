@@ -4,7 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './Home.css';
-import { getCartItemBreakdown } from '../utils/cartPricing';
+import {
+  getCartItemBreakdown,
+  getCartItemUnitPrice,
+  recalculateCartItemPrice,
+} from '../utils/cartPricing';
 
 const API_URL = '/api';
 
@@ -68,7 +72,8 @@ export default function Home() {
     const newQty = (item.orderQuantity || 1) + delta;
     if (newQty < 1) return;
     item.orderQuantity = newQty;
-    item.price = (item.unitPrice || item.price / (item.orderQuantity || 1)) * newQty;
+    item.unitPrice = getCartItemUnitPrice(item);
+    item.price = recalculateCartItemPrice(item);
     setCart(newCart);
   };
 
@@ -279,7 +284,10 @@ export default function Home() {
                         </div>
                         {breakdown.addonLines.map((addon, addonIdx) => (
                           <div key={`${addon.name}-${addonIdx}`} className="item-detail-row">
-                            <span className="addon-text">+ {addon.name}</span>
+                            <span className="addon-text">
+                              + {addon.name}
+                              {addon.quantity > 1 ? ` ×${addon.quantity}` : ''}
+                            </span>
                             <span className="item-detail-price">Rs. {addon.total}</span>
                           </div>
                         ))}

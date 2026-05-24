@@ -19,7 +19,8 @@ const orderSchema = new mongoose.Schema({
     price: Number,
     selectedAddons: [{
       name: String,
-      price: Number
+      price: Number,
+      quantity: { type: Number, default: 1 }
     }]
   }],
   totalPrice: Number,

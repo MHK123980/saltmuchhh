@@ -4,7 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import './ProductDetails.css';
-import { getCartItemBreakdown } from '../utils/cartPricing';
+import {
+  getCartItemBreakdown,
+  getAddonUnitTotal,
+  getCartItemUnitPrice,
+  recalculateCartItemPrice,
+} from '../utils/cartPricing';
 
 const API_URL = '/api';
 
@@ -78,24 +83,51 @@ export default function ProductDetails() {
     }
   };
 
+  const getAddonQuantity = (addonName) => {
+    const addon = selectedAddons.find((a) => a?.name === addonName);
+    return addon?.quantity || 0;
+  };
+
   const handleAddonChange = (addonName, isChecked) => {
-    const safeSelectedAddons = Array.isArray(selectedAddons) ? selectedAddons : [];
+    const addon = config?.addons?.find((a) => a?.name === addonName);
+    if (!addon) return;
 
     if (isChecked) {
-      const addon = config?.addons?.find(a => a?.name === addonName);
-      // Avoid adding undefined if addon name isn't found
-      if (!addon) return;
-      setSelectedAddons([...safeSelectedAddons, addon]);
+      setSelectedAddons((prev) => {
+        if (prev.some((a) => a.name === addonName)) return prev;
+        return [...prev, { ...addon, quantity: 1 }];
+      });
     } else {
-      setSelectedAddons(safeSelectedAddons.filter(a => a?.name !== addonName));
+      setSelectedAddons((prev) => prev.filter((a) => a.name !== addonName));
     }
+  };
+
+  const updateAddonQuantity = (addonName, delta) => {
+    const addon = config?.addons?.find((a) => a?.name === addonName);
+    if (!addon) return;
+
+    setSelectedAddons((prev) => {
+      const existing = prev.find((a) => a.name === addonName);
+      if (!existing) {
+        if (delta <= 0) return prev;
+        return [...prev, { ...addon, quantity: 1 }];
+      }
+
+      const newQty = (existing.quantity || 1) + delta;
+      if (newQty < 1) {
+        return prev.filter((a) => a.name !== addonName);
+      }
+
+      return prev.map((a) =>
+        a.name === addonName ? { ...a, quantity: newQty } : a
+      );
+    });
   };
 
   const getUnitPrice = () => {
     if (!product || !product.variants[variantIndex]) return 0;
     const basePrice = product.variants[variantIndex].price;
-    const addonsPrice = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-    return basePrice + addonsPrice;
+    return basePrice + getAddonUnitTotal(selectedAddons);
   };
 
   const getProductTotal = () => {
@@ -111,7 +143,11 @@ export default function ProductDetails() {
       productName: product.name,
       quantity: variant.quantity,
       orderQuantity: orderQuantity,
-      selectedAddons: selectedAddons,
+      selectedAddons: selectedAddons.map((addon) => ({
+        name: addon.name,
+        price: addon.price,
+        quantity: addon.quantity || 1,
+      })),
       unitPrice: getUnitPrice(),
       variantPrice: variant.price,
       price: getProductTotal(),
@@ -135,7 +171,8 @@ export default function ProductDetails() {
     const newQty = (item.orderQuantity || 1) + delta;
     if (newQty < 1) return;
     item.orderQuantity = newQty;
-    item.price = item.unitPrice * newQty;
+    item.unitPrice = getCartItemUnitPrice(item);
+    item.price = recalculateCartItemPrice(item);
     setCart(newCart);
   };
 
@@ -246,17 +283,41 @@ export default function ProductDetails() {
                 <label>Optional Add-ons:</label>
                 {config.addons && config.addons.length > 0 ? (
                   config.addons.map((addon, idx) => {
-                    const safeSelectedAddons = Array.isArray(selectedAddons) ? selectedAddons : [];
-                    const isChecked = safeSelectedAddons.some(a => a?.name === addon.name);
+                    const isChecked = selectedAddons.some((a) => a?.name === addon.name);
+                    const addonQty = getAddonQuantity(addon.name);
                     return (
-                      <label key={idx} className="checkbox-label">
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked} 
-                          onChange={(e) => handleAddonChange(addon.name, e.target.checked)} 
-                        />
-                        + {addon.name} (+ Rs. {addon.price})
-                      </label>
+                      <div key={idx} className="addon-option">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => handleAddonChange(addon.name, e.target.checked)}
+                          />
+                          + {addon.name} (+ Rs. {addon.price} each)
+                        </label>
+                        {isChecked && (
+                          <div className="addon-qty-row">
+                            <span className="addon-qty-label">Qty</span>
+                            <div className="addon-qty-controls">
+                              <button
+                                type="button"
+                                className="addon-qty-btn"
+                                onClick={() => updateAddonQuantity(addon.name, -1)}
+                              >
+                                −
+                              </button>
+                              <span className="addon-qty-value">{addonQty}</span>
+                              <button
+                                type="button"
+                                className="addon-qty-btn"
+                                onClick={() => updateAddonQuantity(addon.name, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })
                 ) : (
@@ -324,7 +385,10 @@ export default function ProductDetails() {
                         </div>
                         {breakdown.addonLines.map((addon, addonIdx) => (
                           <div key={`${addon.name}-${addonIdx}`} className="item-detail-row">
-                            <span className="addon-text">+ {addon.name}</span>
+                            <span className="addon-text">
+                              + {addon.name}
+                              {addon.quantity > 1 ? ` ×${addon.quantity}` : ''}
+                            </span>
                             <span className="item-detail-price">Rs. {addon.total}</span>
                           </div>
                         ))}

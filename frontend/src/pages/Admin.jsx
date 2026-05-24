@@ -693,7 +693,9 @@ export default function Admin() {
                   </thead>
                   <tbody>
                     {viewingOrder.items.map((item, idx) => {
-                      const addonsPrice = item.selectedAddons ? item.selectedAddons.reduce((s, a) => s + a.price, 0) : 0;
+                      const addonsPrice = item.selectedAddons
+                        ? item.selectedAddons.reduce((s, a) => s + a.price * (a.quantity || 1), 0) * (item.orderQuantity || 1)
+                        : 0;
                       const itemPrice = item.price - addonsPrice;
                       return (
                       <tr key={idx} style={{borderBottom: '1px solid #eee'}}>
@@ -704,7 +706,9 @@ export default function Admin() {
                         <td style={{padding: '10px 0'}}>{item.orderQuantity || 1}</td>
                         <td style={{padding: '10px 0'}}>Rs. {itemPrice}</td>
                         <td style={{padding: '10px 0'}}>
-                          {item.selectedAddons && item.selectedAddons.length > 0 ? item.selectedAddons.map(a => a.name).join(', ') : '-'}
+                          {item.selectedAddons && item.selectedAddons.length > 0
+                            ? item.selectedAddons.map(a => `${a.name}${(a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''}`).join(', ')
+                            : '-'}
                         </td>
                         <td style={{padding: '10px 0'}}>
                           {item.selectedAddons && item.selectedAddons.length > 0 ? `Rs. ${addonsPrice}` : '-'}
@@ -884,7 +888,9 @@ export default function Admin() {
               </thead>
               <tbody>
                 {viewingOrder.items.map((item, idx) => {
-                  const addonsPrice = item.selectedAddons ? item.selectedAddons.reduce((s, a) => s + a.price, 0) : 0;
+                  const addonsPrice = item.selectedAddons
+                    ? item.selectedAddons.reduce((s, a) => s + a.price * (a.quantity || 1), 0) * (item.orderQuantity || 1)
+                    : 0;
                   const itemPrice = item.price - addonsPrice;
                   return (
                   <React.Fragment key={idx}>
@@ -896,8 +902,12 @@ export default function Admin() {
                     </tr>
                     {item.selectedAddons && item.selectedAddons.map((addon, aIdx) => (
                       <tr key={`addon-${aIdx}`}>
-                        <td style={{paddingLeft: '10px'}}><small>Addon: {addon.name}</small></td>
-                        <td style={{textAlign:'right'}}><small>Rs. {addon.price}</small></td>
+                        <td style={{paddingLeft: '10px'}}>
+                          <small>Addon: {addon.name}{(addon.quantity || 1) > 1 ? ` ×${addon.quantity}` : ''}</small>
+                        </td>
+                        <td style={{textAlign:'right'}}>
+                          <small>Rs. {addon.price * (addon.quantity || 1) * (item.orderQuantity || 1)}</small>
+                        </td>
                       </tr>
                     ))}
                     <tr>

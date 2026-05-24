@@ -131,13 +131,74 @@
   font-size: 1.1rem;
 }
 
+.addon-option {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(245, 235, 224, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(211, 84, 0, 0.12);
+}
+
 .addons-group .checkbox-label {
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+}
+
+.addon-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(211, 84, 0, 0.2);
+}
+
+.addon-qty-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.addon-qty-controls {
+  display: inline-flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid rgba(211, 84, 0, 0.2);
+}
+
+.addon-qty-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addon-qty-btn:hover {
+  background: rgba(211, 84, 0, 0.1);
+}
+
+.addon-qty-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  user-select: none;
 }
 
 .total-display {
