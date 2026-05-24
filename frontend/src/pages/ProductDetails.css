@@ -222,6 +222,60 @@
 }
 
 /* ===================== */
+/* Cart Item Layout      */
+/* ===================== */
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px var(--shadow);
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.item-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.item-info-header h4 {
+  color: var(--text-main);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-line-price {
+  font-weight: 800;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.item-info p {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.item-price {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ===================== */
 /* Cart Quantity Controls */
 /* ===================== */
 .item-actions {

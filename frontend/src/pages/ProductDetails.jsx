@@ -313,7 +313,10 @@ export default function ProductDetails() {
                   cart.map((item, idx) => (
                     <div key={idx} className="cart-item">
                       <div className="item-info">
-                        <h4>{item.productName}</h4>
+                        <div className="item-info-header">
+                          <h4>{item.productName}</h4>
+                          <span className="item-line-price">Rs. {item.price}</span>
+                        </div>
                         <p>{item.variantText}</p>
                         {item.selectedAddons && item.selectedAddons.length > 0 && (
                           <p className="addon-text">+ {item.selectedAddons.map(a => a.name).join(', ')}</p>
@@ -329,7 +332,6 @@ export default function ProductDetails() {
                           </div>
                         </div>
                         <div className="item-price">
-                          <span>Rs. {item.price}</span>
                           <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
                         </div>
                       </div>
