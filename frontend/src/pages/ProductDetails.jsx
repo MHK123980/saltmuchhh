@@ -186,11 +186,9 @@ export default function ProductDetails() {
     if (!addon) return;
 
     const newQty = (addon.quantity || 1) + delta;
-    if (newQty < 1) {
-      item.selectedAddons.splice(addonIndex, 1);
-    } else {
-      item.selectedAddons[addonIndex] = { ...addon, quantity: newQty };
-    }
+    if (newQty < 1) return;
+
+    item.selectedAddons[addonIndex] = { ...addon, quantity: newQty };
 
     item.unitPrice = getCartItemUnitPrice(item);
     item.price = recalculateCartItemPrice(item);
@@ -414,6 +412,7 @@ export default function ProductDetails() {
                                   type="button"
                                   className="cart-addon-qty-btn"
                                   onClick={() => updateCartAddonQuantity(idx, addonIdx, -1)}
+                                  disabled={addon.quantity <= 1}
                                 >
                                   −
                                 </button>

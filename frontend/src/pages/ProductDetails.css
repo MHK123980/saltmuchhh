@@ -368,8 +368,13 @@
   padding: 0;
 }
 
-.cart-addon-qty-btn:hover {
+.cart-addon-qty-btn:hover:not(:disabled) {
   background: rgba(211, 84, 0, 0.1);
+}
+
+.cart-addon-qty-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .cart-addon-qty-value {

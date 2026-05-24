@@ -28,7 +28,9 @@ export function getCartItemBreakdown(item) {
 
   return {
     variantLineTotal: variantUnitPrice * orderQty,
-    addonLines: addons.map((addon) => ({
+    addonLines: addons
+      .filter((addon) => (addon.quantity || 1) >= 1)
+      .map((addon) => ({
       name: addon.name,
       quantity: addon.quantity || 1,
       total: (addon.price || 0) * (addon.quantity || 1) * orderQty,
