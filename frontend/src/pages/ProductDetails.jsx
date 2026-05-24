@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import './ProductDetails.css';
+import { getCartItemBreakdown } from '../utils/cartPricing';
 
 const API_URL = '/api';
 
@@ -112,6 +113,7 @@ export default function ProductDetails() {
       orderQuantity: orderQuantity,
       selectedAddons: selectedAddons,
       unitPrice: getUnitPrice(),
+      variantPrice: variant.price,
       price: getProductTotal(),
       variantText: `${variant.quantity} Cookies`
     };
@@ -310,17 +312,22 @@ export default function ProductDetails() {
 
               <div className="cart-items">
                 {cart.length === 0 ? <p className="empty-cart">Your cart is empty.</p> : (
-                  cart.map((item, idx) => (
+                  cart.map((item, idx) => {
+                    const breakdown = getCartItemBreakdown(item);
+                    return (
                     <div key={idx} className="cart-item">
                       <div className="item-info">
-                        <div className="item-info-header">
-                          <h4>{item.productName}</h4>
-                          <span className="item-line-price">Rs. {item.price}</span>
+                        <h4>{item.productName}</h4>
+                        <div className="item-detail-row">
+                          <span>{item.variantText}</span>
+                          <span className="item-detail-price">Rs. {breakdown.variantLineTotal}</span>
                         </div>
-                        <p>{item.variantText}</p>
-                        {item.selectedAddons && item.selectedAddons.length > 0 && (
-                          <p className="addon-text">+ {item.selectedAddons.map(a => a.name).join(', ')}</p>
-                        )}
+                        {breakdown.addonLines.map((addon, addonIdx) => (
+                          <div key={`${addon.name}-${addonIdx}`} className="item-detail-row">
+                            <span className="addon-text">+ {addon.name}</span>
+                            <span className="item-detail-price">Rs. {addon.total}</span>
+                          </div>
+                        ))}
                       </div>
                       <div className="item-actions">
                         <div className="cart-qty-block">
@@ -331,12 +338,17 @@ export default function ProductDetails() {
                           <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
                           </div>
                         </div>
+                        <div className="cart-line-total">
+                          <span>Total Amount</span>
+                          <span>Rs. {breakdown.lineTotal}</span>
+                        </div>
                         <div className="item-price">
                           <button className="remove-btn" onClick={() => removeFromCart(idx)}>🗑️</button>
                         </div>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
