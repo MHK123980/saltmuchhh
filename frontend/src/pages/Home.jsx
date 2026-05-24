@@ -276,10 +276,13 @@ export default function Home() {
                         )}
                       </div>
                       <div className="item-actions">
-                        <div className="cart-qty-controls">
+                        <div className="cart-qty-block">
+                          <span className="cart-qty-label">Deal Quantity!</span>
+                          <div className="cart-qty-controls">
                           <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, -1)}>−</button>
                           <span className="cart-qty-value">{item.orderQuantity || 1}</span>
                           <button className="cart-qty-btn" onClick={() => updateCartQuantity(idx, 1)}>+</button>
+                          </div>
                         </div>
                         <div className="item-price">
                           <span>Rs. {item.price}</span>

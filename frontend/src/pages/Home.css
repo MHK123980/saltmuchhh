@@ -567,6 +567,22 @@
   gap: 8px;
 }
 
+.cart-qty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-qty-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .cart-qty-controls {
   display: inline-flex;
   align-items: center;
