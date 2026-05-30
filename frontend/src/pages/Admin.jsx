@@ -46,6 +46,16 @@ export default function Admin() {
   const [reportPeriod, setReportPeriod] = useState('last-month');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
+  // For Add Order View
+  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const [manualOrderCart, setManualOrderCart] = useState([]);
+  const [manualCustomer, setManualCustomer] = useState({ fullName: '', phoneNo: '', houseNo: '', streetName: '', areaName: '', city: '' });
+  
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
+  const [itemQuantity, setItemQuantity] = useState(1);
+  const [selectedAddons, setSelectedAddons] = useState([]);
+
   const openProductModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
@@ -266,6 +276,93 @@ export default function Admin() {
   };
 
   const handlePrint = () => window.print();
+
+  // --- Manual Add Order ---
+  const handleAddToManualCart = () => {
+    if (!selectedProductId) {
+      toast.error('Please select a product');
+      return;
+    }
+    const product = products.find(p => p._id === selectedProductId);
+    if (!product) return;
+    
+    const variant = product.variants[selectedVariantIdx];
+    
+    const cartItem = {
+      productId: product._id,
+      productName: product.name,
+      quantity: variant.quantity,
+      orderQuantity: Number(itemQuantity),
+      unitPrice: variant.price,
+      price: variant.price * Number(itemQuantity) + selectedAddons.reduce((acc, a) => acc + (a.price * a.quantity * Number(itemQuantity)), 0),
+      selectedAddons: selectedAddons.map(a => ({...a}))
+    };
+    
+    setManualOrderCart([...manualOrderCart, cartItem]);
+    
+    // Reset selection
+    setSelectedProductId('');
+    setSelectedVariantIdx(0);
+    setItemQuantity(1);
+    setSelectedAddons([]);
+    toast.success('Item added to order');
+  };
+
+  const handleManualAddonToggle = (addonName, addonPrice, isChecked) => {
+    if (isChecked) {
+      setSelectedAddons([...selectedAddons, { name: addonName, price: addonPrice, quantity: 1 }]);
+    } else {
+      setSelectedAddons(selectedAddons.filter(a => a.name !== addonName));
+    }
+  };
+
+  const handleManualAddonQtyChange = (addonName, qty) => {
+    setSelectedAddons(selectedAddons.map(a => a.name === addonName ? { ...a, quantity: Number(qty) } : a));
+  };
+
+  const removeManualCartItem = (index) => {
+    const newCart = [...manualOrderCart];
+    newCart.splice(index, 1);
+    setManualOrderCart(newCart);
+  };
+
+  const handleManualOrderSubmit = async () => {
+    if (manualOrderCart.length === 0) {
+      toast.error('Order is empty');
+      return;
+    }
+    
+    const totalPrice = manualOrderCart.reduce((sum, item) => sum + item.price, 0);
+    
+    // Clean up empty fields from customer
+    const cleanCustomer = {};
+    Object.keys(manualCustomer).forEach(key => {
+      if (manualCustomer[key].trim() !== '') {
+        cleanCustomer[key] = manualCustomer[key].trim();
+      }
+    });
+
+    const orderData = {
+      customerDetails: Object.keys(cleanCustomer).length > 0 ? cleanCustomer : { fullName: '' }, // fullName: '' to prevent undefined errors in map
+      items: manualOrderCart,
+      totalPrice: totalPrice,
+      status: 'Completed'
+    };
+    
+    try {
+      const toastId = toast.loading('Placing Order...');
+      await axios.post(`${API_URL}/orders`, orderData);
+      toast.dismiss(toastId);
+      toast.success('Order added successfully!');
+      
+      setManualOrderCart([]);
+      setManualCustomer({ fullName: '', phoneNo: '', houseNo: '', streetName: '', areaName: '', city: '' });
+      setIsAddOrderOpen(false);
+      fetchOrders();
+    } catch (err) {
+      toast.error('Failed to add order');
+    }
+  };
 
   // --- Materials ---
   const handleMaterialSubmit = async (e) => {
@@ -604,9 +701,12 @@ export default function Admin() {
         )}
 
         {/* --- ORDERS TAB --- */}
-        {activeTab === 'orders' && !viewingOrder && (
+        {activeTab === 'orders' && !viewingOrder && !isAddOrderOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h2>Orders Management <span className="live-badge">Live</span></h2>
+            <div className="dashboard-header-row">
+              <h2>Orders Management <span className="live-badge">Live</span></h2>
+              <button className="btn-small" onClick={() => setIsAddOrderOpen(true)} style={{backgroundColor: '#e67e22', color: 'white'}}>+ Add Order</button>
+            </div>
             <div className="orders-list">
               {orders.length === 0 ? <p>No orders yet.</p> : orders.map(order => (
                 <div key={order._id} className="order-card glass-panel">
@@ -639,6 +739,126 @@ export default function Admin() {
             </div>
           </motion.div>
         )}
+
+        {/* --- ADD ORDER VIEW --- */}
+        {activeTab === 'orders' && isAddOrderOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <button className="back-btn mb-20" onClick={() => setIsAddOrderOpen(false)}>← Back to Orders</button>
+            <div className="glass-panel">
+              <h2>Add New Order</h2>
+              
+              <div className="management-grid" style={{gridTemplateColumns: '1fr 1fr'}}>
+                {/* Left side: Add Items */}
+                <div className="form-group">
+                  <h3>Select Product</h3>
+                  <select className="form-control" value={selectedProductId} onChange={(e) => {
+                    setSelectedProductId(e.target.value);
+                    setSelectedVariantIdx(0);
+                    setSelectedAddons([]);
+                  }} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', marginBottom: '15px'}}>
+                    <option value="">-- Choose a Product --</option>
+                    {products.map(p => (
+                      <option key={p._id} value={p._id}>{p.name}</option>
+                    ))}
+                  </select>
+                  
+                  {selectedProductId && (
+                    <>
+                      <h4 style={{marginTop: '15px', marginBottom: '5px'}}>Variant (Offer)</h4>
+                      <select className="form-control" value={selectedVariantIdx} onChange={(e) => setSelectedVariantIdx(Number(e.target.value))} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', marginBottom: '15px'}}>
+                        {products.find(p => p._id === selectedProductId)?.variants.map((v, idx) => (
+                          <option key={idx} value={idx}>{v.quantity} Items for Rs. {v.price}</option>
+                        ))}
+                      </select>
+                      
+                      <h4 style={{marginTop: '15px', marginBottom: '5px'}}>Quantity of Offer</h4>
+                      <input type="number" min="1" className="form-control" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', marginBottom: '15px'}} />
+                      
+                      {products.find(p => p._id === selectedProductId)?.allowAddons !== false && config?.addons?.length > 0 && (
+                        <>
+                          <h4 style={{marginTop: '15px', marginBottom: '10px'}}>Add-ons</h4>
+                          {config.addons.map((addon, idx) => {
+                            const selected = selectedAddons.find(a => a.name === addon.name);
+                            return (
+                              <div key={idx} style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px'}}>
+                                <input type="checkbox" checked={!!selected} onChange={(e) => handleManualAddonToggle(addon.name, addon.price, e.target.checked)} style={{width: 'auto', margin: 0}} />
+                                <span>{addon.name} (+Rs. {addon.price})</span>
+                                {selected && (
+                                  <input type="number" min="1" style={{width: '60px', padding: '5px', borderRadius: '4px', border: '1px solid #ccc'}} value={selected.quantity} onChange={(e) => handleManualAddonQtyChange(addon.name, e.target.value)} />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </>
+                      )}
+                      
+                      <button className="btn" onClick={handleAddToManualCart} style={{marginTop: '20px'}}>Add to Order</button>
+                    </>
+                  )}
+                </div>
+
+                {/* Right side: Cart & Customer Info */}
+                <div className="form-group" style={{borderLeft: '1px solid rgba(0,0,0,0.1)', paddingLeft: '20px'}}>
+                  <h3>Current Order Items</h3>
+                  {manualOrderCart.length === 0 ? <p style={{color: '#888'}}>No items added yet.</p> : (
+                    <table style={{width: '100%', textAlign: 'left', marginBottom: '20px', borderCollapse: 'collapse'}}>
+                      <thead>
+                        <tr style={{borderBottom: '1px solid #eee'}}>
+                          <th style={{paddingBottom: '5px'}}>Item</th>
+                          <th style={{paddingBottom: '5px'}}>Qty</th>
+                          <th style={{paddingBottom: '5px'}}>Price</th>
+                          <th style={{paddingBottom: '5px'}}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {manualOrderCart.map((item, idx) => (
+                          <tr key={idx} style={{borderBottom: '1px solid #eee'}}>
+                            <td style={{padding: '5px 0'}}>
+                              <strong>{item.productName}</strong><br/>
+                              <small>{item.quantity} Cookies</small>
+                              {item.selectedAddons && item.selectedAddons.length > 0 && (
+                                <div style={{fontSize: '0.8em', color: '#666'}}>
+                                  + {item.selectedAddons.map(a => `${a.name}(x${a.quantity})`).join(', ')}
+                                </div>
+                              )}
+                            </td>
+                            <td>{item.orderQuantity}</td>
+                            <td>Rs. {item.price}</td>
+                            <td><button className="btn-small danger" onClick={() => removeManualCartItem(idx)} style={{padding: '2px 8px'}}>X</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colSpan="2" style={{textAlign: 'right', paddingTop: '10px'}}><strong>Total:</strong></td>
+                          <td colSpan="2" style={{paddingTop: '10px'}}><strong>Rs. {manualOrderCart.reduce((sum, item) => sum + item.price, 0)}</strong></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  )}
+
+                  <h3 style={{marginTop: '20px'}}>Customer Details (Optional)</h3>
+                  <p style={{fontSize: '0.85em', color: '#666', marginBottom: '10px'}}>Leave blank if not needed on the slip.</p>
+                  <input type="text" placeholder="Full Name" className="form-control" value={manualCustomer.fullName} onChange={e => setManualCustomer({...manualCustomer, fullName: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', marginBottom: '10px'}} />
+                  <input type="text" placeholder="Phone Number" className="form-control" value={manualCustomer.phoneNo} onChange={e => setManualCustomer({...manualCustomer, phoneNo: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', marginBottom: '10px'}} />
+                  
+                  <h4 style={{marginTop: '15px', marginBottom: '5px'}}>Address (Optional)</h4>
+                  <div style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
+                    <input type="text" placeholder="House No" className="form-control" value={manualCustomer.houseNo} onChange={e => setManualCustomer({...manualCustomer, houseNo: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%'}} />
+                    <input type="text" placeholder="Street" className="form-control" value={manualCustomer.streetName} onChange={e => setManualCustomer({...manualCustomer, streetName: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%'}} />
+                  </div>
+                  <div style={{display: 'flex', gap: '10px'}}>
+                    <input type="text" placeholder="Area" className="form-control" value={manualCustomer.areaName} onChange={e => setManualCustomer({...manualCustomer, areaName: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%'}} />
+                    <input type="text" placeholder="City" className="form-control" value={manualCustomer.city} onChange={e => setManualCustomer({...manualCustomer, city: e.target.value})} style={{padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '100%'}} />
+                  </div>
+
+                  <button className="btn" onClick={handleManualOrderSubmit} style={{width: '100%', marginTop: '20px', backgroundColor: '#e67e22', color: 'white', padding: '12px'}}>Place Order</button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
 
         {/* View Specific Order Details */}
         {activeTab === 'orders' && viewingOrder && (
@@ -674,9 +894,15 @@ export default function Admin() {
               </p>
 
               <h3 style={{marginTop: '20px'}}>Customer Info</h3>
-              <p><strong>Name:</strong> {viewingOrder.customerDetails.fullName}</p>
-              <p><strong>Phone:</strong> {viewingOrder.customerDetails.phoneNo}</p>
-              <p><strong>Address:</strong> {viewingOrder.customerDetails.houseNo}, {viewingOrder.customerDetails.streetName}, {viewingOrder.customerDetails.areaName}, {viewingOrder.customerDetails.city}</p>
+              {viewingOrder.customerDetails && viewingOrder.customerDetails.fullName ? (
+                <>
+                  <p><strong>Name:</strong> {viewingOrder.customerDetails.fullName}</p>
+                  <p><strong>Phone:</strong> {viewingOrder.customerDetails.phoneNo}</p>
+                  <p><strong>Address:</strong> {viewingOrder.customerDetails.houseNo}, {viewingOrder.customerDetails.streetName}, {viewingOrder.customerDetails.areaName}, {viewingOrder.customerDetails.city}</p>
+                </>
+              ) : (
+                <p style={{color: '#666', fontStyle: 'italic'}}>No customer details provided (Walk-in/Manual Order)</p>
+              )}
               
               <h3 style={{marginTop: '20px'}}>Items Ordered</h3>
               <div className="table-responsive">
@@ -875,10 +1101,16 @@ export default function Admin() {
             <p className="receipt-date">{new Date(viewingOrder.createdAt).toLocaleString()}</p>
             <p style={{textAlign: 'center'}}><strong>Order ID:</strong><br/>#{viewingOrder.orderNumber || viewingOrder._id}</p>
             <div className="receipt-divider"></div>
-            <p><strong>Customer:</strong> {viewingOrder.customerDetails.fullName}</p>
-            <p><strong>Phone:</strong> {viewingOrder.customerDetails.phoneNo}</p>
-            <p><strong>Address:</strong> {viewingOrder.customerDetails.houseNo}, {viewingOrder.customerDetails.streetName}, {viewingOrder.customerDetails.areaName}, {viewingOrder.customerDetails.city}</p>
-            <div className="receipt-divider"></div>
+            {viewingOrder.customerDetails && viewingOrder.customerDetails.fullName && (
+              <>
+                <p><strong>Customer:</strong> {viewingOrder.customerDetails.fullName}</p>
+                <p><strong>Phone:</strong> {viewingOrder.customerDetails.phoneNo}</p>
+                {viewingOrder.customerDetails.houseNo && (
+                  <p><strong>Address:</strong> {viewingOrder.customerDetails.houseNo}, {viewingOrder.customerDetails.streetName}, {viewingOrder.customerDetails.areaName}, {viewingOrder.customerDetails.city}</p>
+                )}
+                <div className="receipt-divider"></div>
+              </>
+            )}
             <table className="receipt-items" style={{width: '100%'}}>
               <thead>
                 <tr style={{borderBottom: '1px dashed black'}}>
