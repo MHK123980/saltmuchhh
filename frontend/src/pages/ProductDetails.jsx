@@ -146,7 +146,8 @@ export default function ProductDetails() {
       selectedAddons: selectedAddons.map((addon) => ({
         name: addon.name,
         price: addon.price,
-        quantity: addon.quantity || 1,
+        quantity: (addon.quantity || 1) * orderQuantity,
+        isAbsolute: true
       })),
       unitPrice: getUnitPrice(),
       variantPrice: variant.price,
@@ -168,8 +169,18 @@ export default function ProductDetails() {
   const updateCartQuantity = (index, delta) => {
     const newCart = [...cart];
     const item = newCart[index];
-    const newQty = (item.orderQuantity || 1) + delta;
+    const oldQty = item.orderQuantity || 1;
+    const newQty = oldQty + delta;
     if (newQty < 1) return;
+    
+    if (item.selectedAddons) {
+      item.selectedAddons = item.selectedAddons.map(addon => {
+        const currentQty = addon.isAbsolute ? addon.quantity : (addon.quantity || 1) * oldQty;
+        const baseQty = currentQty / oldQty;
+        return { ...addon, quantity: Math.max(1, Math.round(baseQty * newQty)), isAbsolute: true };
+      });
+    }
+
     item.orderQuantity = newQty;
     item.unitPrice = getCartItemUnitPrice(item);
     item.price = recalculateCartItemPrice(item);
@@ -185,10 +196,11 @@ export default function ProductDetails() {
     const addon = item.selectedAddons[addonIndex];
     if (!addon) return;
 
-    const newQty = (addon.quantity || 1) + delta;
+    const currentQty = addon.isAbsolute ? addon.quantity : (addon.quantity || 1) * (item.orderQuantity || 1);
+    const newQty = currentQty + delta;
     if (newQty < 1) return;
 
-    item.selectedAddons[addonIndex] = { ...addon, quantity: newQty };
+    item.selectedAddons[addonIndex] = { ...addon, quantity: newQty, isAbsolute: true };
 
     item.unitPrice = getCartItemUnitPrice(item);
     item.price = recalculateCartItemPrice(item);

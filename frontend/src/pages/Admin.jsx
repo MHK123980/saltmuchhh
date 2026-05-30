@@ -295,7 +295,7 @@ export default function Admin() {
       orderQuantity: Number(itemQuantity),
       unitPrice: variant.price,
       price: variant.price * Number(itemQuantity) + selectedAddons.reduce((acc, a) => acc + (a.price * a.quantity * Number(itemQuantity)), 0),
-      selectedAddons: selectedAddons.map(a => ({...a}))
+      selectedAddons: selectedAddons.map(a => ({...a, quantity: a.quantity * Number(itemQuantity), isAbsolute: true}))
     };
     
     setManualOrderCart([...manualOrderCart, cartItem]);
@@ -920,7 +920,7 @@ export default function Admin() {
                   <tbody>
                     {viewingOrder.items.map((item, idx) => {
                       const addonsPrice = item.selectedAddons
-                        ? item.selectedAddons.reduce((s, a) => s + a.price * (a.quantity || 1), 0) * (item.orderQuantity || 1)
+                        ? item.selectedAddons.reduce((s, a) => s + a.price * (a.isAbsolute ? a.quantity : (a.quantity || 1) * (item.orderQuantity || 1)), 0)
                         : 0;
                       const itemPrice = item.price - addonsPrice;
                       return (
@@ -933,7 +933,10 @@ export default function Admin() {
                         <td style={{padding: '10px 0'}}>Rs. {itemPrice}</td>
                         <td style={{padding: '10px 0'}}>
                           {item.selectedAddons && item.selectedAddons.length > 0
-                            ? item.selectedAddons.map(a => `${a.name}${(a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''}`).join(', ')
+                            ? item.selectedAddons.map(a => {
+                                const q = a.isAbsolute ? a.quantity : (a.quantity || 1) * (item.orderQuantity || 1);
+                                return `${a.name}${q > 1 ? ` ×${q}` : ''}`;
+                              }).join(', ')
                             : '-'}
                         </td>
                         <td style={{padding: '10px 0'}}>
@@ -1121,7 +1124,7 @@ export default function Admin() {
               <tbody>
                 {viewingOrder.items.map((item, idx) => {
                   const addonsPrice = item.selectedAddons
-                    ? item.selectedAddons.reduce((s, a) => s + a.price * (a.quantity || 1), 0) * (item.orderQuantity || 1)
+                    ? item.selectedAddons.reduce((s, a) => s + a.price * (a.isAbsolute ? a.quantity : (a.quantity || 1) * (item.orderQuantity || 1)), 0)
                     : 0;
                   const itemPrice = item.price - addonsPrice;
                   return (
@@ -1132,16 +1135,19 @@ export default function Admin() {
                       </td>
                       <td style={{textAlign:'right'}}>Rs. {itemPrice}</td>
                     </tr>
-                    {item.selectedAddons && item.selectedAddons.map((addon, aIdx) => (
-                      <tr key={`addon-${aIdx}`}>
-                        <td style={{paddingLeft: '10px'}}>
-                          <small>Addon: {addon.name}{(addon.quantity || 1) > 1 ? ` ×${addon.quantity}` : ''}</small>
-                        </td>
-                        <td style={{textAlign:'right'}}>
-                          <small>Rs. {addon.price * (addon.quantity || 1) * (item.orderQuantity || 1)}</small>
-                        </td>
-                      </tr>
-                    ))}
+                    {item.selectedAddons && item.selectedAddons.map((addon, aIdx) => {
+                      const q = addon.isAbsolute ? addon.quantity : (addon.quantity || 1) * (item.orderQuantity || 1);
+                      return (
+                        <tr key={aIdx}>
+                          <td style={{padding: '3px 0', paddingLeft: '10px'}}>
+                            <small>Addon: {addon.name}{q > 1 ? ` ×${q}` : ''}</small>
+                          </td>
+                          <td style={{padding: '3px 0', textAlign: 'right'}}>
+                            <small>Rs. {addon.price * q}</small>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     <tr>
                       <td style={{textAlign: 'left'}}><strong>Item Total</strong></td>
                       <td style={{textAlign:'right'}}><strong>Rs. {item.price}</strong></td>
