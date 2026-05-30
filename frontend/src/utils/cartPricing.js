@@ -1,3 +1,10 @@
+export function getAddonUnitTotal(addons) {
+  return (Array.isArray(addons) ? addons : []).reduce(
+    (sum, addon) => sum + (addon.price || 0) * (addon.quantity || 1),
+    0
+  );
+}
+
 export function getCartItemUnitPrice(item) {
   return item.variantPrice ?? item.unitPrice;
 }
