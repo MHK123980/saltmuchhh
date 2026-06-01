@@ -58,13 +58,16 @@ router.post('/products', verifyAdmin, upload.array('images', 10), async (req, re
   try {
     const productData = JSON.parse(req.body.productData);
     const imagePaths = req.files.map(file => {
-      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      let mime = file.mimetype;
+      if (!mime || mime === 'application/octet-stream') mime = 'image/jpeg';
+      return `data:${mime};base64,${file.buffer.toString('base64')}`;
     });
     
     // Combine existing images (if sent, e.g. during an update fake via POST, but usually just new)
+    const combinedImages = [...(productData.images || []), ...imagePaths];
     const product = new Product({
       ...productData,
-      images: imagePaths
+      images: combinedImages
     });
     await product.save();
     res.json(product);
@@ -78,7 +81,9 @@ router.put('/products/:id', verifyAdmin, upload.array('images', 10), async (req,
   try {
     const productData = JSON.parse(req.body.productData);
     const newImagePaths = req.files.map(file => {
-      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      let mime = file.mimetype;
+      if (!mime || mime === 'application/octet-stream') mime = 'image/jpeg';
+      return `data:${mime};base64,${file.buffer.toString('base64')}`;
     });
     
     // We assume productData.images contains the existing images the user kept

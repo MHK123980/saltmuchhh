@@ -35,7 +35,9 @@ export default function Admin() {
     allowAddons: true,
     variants: [{ quantity: 1, price: 150 }]
   });
-  const [productImages, setProductImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImagesFiles, setNewImagesFiles] = useState([]);
+  const [newImagesPreviews, setNewImagesPreviews] = useState([]);
 
   // For Adding/Editing Materials
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -65,11 +67,15 @@ export default function Admin() {
         allowAddons: product.allowAddons !== false,
         variants: [...product.variants]
       });
-      setProductImages([]);
+      setExistingImages(product.images || []);
+      setNewImagesFiles([]);
+      setNewImagesPreviews([]);
     } else {
       setEditingProduct(null);
       setProductForm({ name: '', description: '', allowAddons: true, variants: [{ quantity: 1, price: 150 }] });
-      setProductImages([]);
+      setExistingImages([]);
+      setNewImagesFiles([]);
+      setNewImagesPreviews([]);
       if (document.getElementById('file-input')) document.getElementById('file-input').value = '';
     }
     setIsProductModalOpen(true);
@@ -79,8 +85,40 @@ export default function Admin() {
     setIsProductModalOpen(false);
     setEditingProduct(null);
     setProductForm({ name: '', description: '', allowAddons: true, variants: [{ quantity: 1, price: 150 }] });
-    setProductImages([]);
+    setExistingImages([]);
+    setNewImagesFiles([]);
+    setNewImagesPreviews([]);
     if (document.getElementById('file-input')) document.getElementById('file-input').value = '';
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewImagesFiles(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setNewImagesPreviews(prev => [...prev, ev.target.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    e.target.value = '';
+  };
+
+  const removeExistingImage = (idx) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeNewImage = (idx) => {
+    setNewImagesFiles(prev => prev.filter((_, i) => i !== idx));
+    setNewImagesPreviews(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeAllImages = () => {
+    setExistingImages([]);
+    setNewImagesFiles([]);
+    setNewImagesPreviews([]);
   };
 
   useEffect(() => {
@@ -415,11 +453,11 @@ export default function Admin() {
       description: productForm.description,
       allowAddons: productForm.allowAddons !== false,
       variants: productForm.variants,
-      images: editingProduct ? editingProduct.images : []
+      images: existingImages
     }));
 
-    for (let i = 0; i < productImages.length; i++) {
-      formData.append('images', productImages[i]);
+    for (let i = 0; i < newImagesFiles.length; i++) {
+      formData.append('images', newImagesFiles[i]);
     }
 
     try {
@@ -436,7 +474,9 @@ export default function Admin() {
       }
       setEditingProduct(null);
       setProductForm({ name: '', description: '', allowAddons: true, variants: [{ quantity: 1, price: 150 }] });
-      setProductImages([]);
+      setExistingImages([]);
+      setNewImagesFiles([]);
+      setNewImagesPreviews([]);
       if(document.getElementById('file-input')) document.getElementById('file-input').value='';
       closeProductModal();
       fetchProducts();
@@ -1002,8 +1042,27 @@ export default function Admin() {
                       <textarea required placeholder="Description" rows="3" value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} />
 
                       <h4>Images (Select from device)</h4>
-                      <input id="file-input" type="file" multiple accept="image/*" onChange={(e) => setProductImages(e.target.files)} />
+                      <input id="file-input" type="file" multiple accept="image/*" onChange={handleFileChange} />
                       <small style={{display:'block', marginBottom:'15px', color:'#666'}}>The first image will be the main image.</small>
+
+                      <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px'}}>
+                        {existingImages.map((img, idx) => (
+                          <div key={`exist-${idx}`} style={{position: 'relative', width: '80px', height: '80px'}}>
+                            <img src={img} alt="Preview" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px'}} />
+                            <button type="button" onClick={() => removeExistingImage(idx)} style={{position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px'}}>×</button>
+                          </div>
+                        ))}
+                        {newImagesPreviews.map((img, idx) => (
+                          <div key={`new-${idx}`} style={{position: 'relative', width: '80px', height: '80px'}}>
+                            <img src={img} alt="Preview" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px'}} />
+                            <button type="button" onClick={() => removeNewImage(idx)} style={{position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px'}}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {(existingImages.length > 0 || newImagesPreviews.length > 0) && (
+                        <button type="button" className="btn-small danger" onClick={removeAllImages} style={{marginBottom: '20px'}}>Delete All Images</button>
+                      )}
 
                       <label style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', fontWeight: 'bold'}}>
                         <input type="checkbox" checked={productForm.allowAddons !== false} onChange={e => setProductForm({...productForm, allowAddons: e.target.checked})} style={{width: 'auto', margin: 0}} />
