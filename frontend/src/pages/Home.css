@@ -553,16 +553,19 @@
 }
 
 .addon-detail-row {
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
 }
 
-.addon-row-left {
+.addon-name-price-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
-  flex-wrap: wrap;
 }
 
 .item-detail-row .addon-text {

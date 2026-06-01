@@ -314,29 +314,29 @@ export default function Home() {
                           <span className="item-detail-price">Rs. {breakdown.variantLineTotal}</span>
                         </div>
                         {breakdown.addonLines.map((addon, addonIdx) => (
-                          <div key={`${addon.name}-${addonIdx}`} className="item-detail-row addon-detail-row">
-                            <div className="addon-row-left">
+                          <div key={`${addon.name}-${addonIdx}`} className="addon-detail-row">
+                            <div className="addon-name-price-row">
                               <span className="addon-text">+ {addon.name}</span>
-                              <div className="cart-addon-qty-controls">
-                                <button
-                                  type="button"
-                                  className="cart-addon-qty-btn"
-                                  onClick={() => updateCartAddonQuantity(idx, addonIdx, -1)}
-                                  disabled={addon.quantity <= 1}
-                                >
-                                  −
-                                </button>
-                                <span className="cart-addon-qty-value">{addon.quantity}</span>
-                                <button
-                                  type="button"
-                                  className="cart-addon-qty-btn"
-                                  onClick={() => updateCartAddonQuantity(idx, addonIdx, 1)}
-                                >
-                                  +
-                                </button>
-                              </div>
+                              <span className="item-detail-price">Rs. {addon.total}</span>
                             </div>
-                            <span className="item-detail-price">Rs. {addon.total}</span>
+                            <div className="cart-addon-qty-controls">
+                              <button
+                                type="button"
+                                className="cart-addon-qty-btn"
+                                onClick={() => updateCartAddonQuantity(idx, addonIdx, -1)}
+                                disabled={addon.quantity <= 1}
+                              >
+                                −
+                              </button>
+                              <span className="cart-addon-qty-value">{addon.quantity}</span>
+                              <button
+                                type="button"
+                                className="cart-addon-qty-btn"
+                                onClick={() => updateCartAddonQuantity(idx, addonIdx, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
