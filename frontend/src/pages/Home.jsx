@@ -223,7 +223,7 @@ export default function Home() {
       >
         <img src="/logo.jpg" alt="Saltmuchhh Logo" className="logo float-anim" />
         <h1>SALTMUCHHH</h1>
-        <p style={{marginBottom: '15px'}}>Freshly Baked Cookies, Straight from the Oven.</p>
+        <p style={{marginBottom: '15px'}}>Freshly Prepared, Handcrafted Daily.</p>
         {config?.storeTiming && (
           <div className="store-timing-banner">
             🕒 Store Timings: {formatTime(config.storeTiming.startTime)} to {formatTime(config.storeTiming.endTime)}
