@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Dexie from 'dexie';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -10,6 +11,17 @@ import {
   getCartItemUnitPrice,
   recalculateCartItemPrice,
 } from '../utils/cartPricing';
+
+// --- ADD THIS BLOCK RIGHT HERE ---
+const originalSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key, value) {
+  try {
+    originalSetItem.apply(this, arguments);
+  } catch (e) {
+    console.warn("LocalStorage full, skipping save for:", key);
+  }
+};
+// ---------------------------------
 
 const API_URL = '/api';
 
