@@ -3,6 +3,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 const Config = require('../models/Config');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
@@ -57,11 +59,18 @@ router.get('/products', async (req, res) => {
 router.post('/products', verifyAdmin, upload.array('images', 10), async (req, res) => {
   try {
     const productData = JSON.parse(req.body.productData);
-    const imagePaths = req.files.map(file => {
-      let mime = file.mimetype;
-      if (!mime || mime === 'application/octet-stream') mime = 'image/jpeg';
-      return `data:${mime};base64,${file.buffer.toString('base64')}`;
+    
+    const uploadPromises = req.files.map(async (file) => {
+      const formData = new FormData();
+      formData.append('image', file.buffer.toString('base64'));
+      const apiKey = process.env.IMGBB_API_KEY;
+      if (!apiKey) throw new Error('IMGBB_API_KEY is not defined in environment variables');
+      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, formData, {
+        headers: formData.getHeaders()
+      });
+      return response.data.data.url;
     });
+    const imagePaths = await Promise.all(uploadPromises);
     
     // Combine existing images (if sent, e.g. during an update fake via POST, but usually just new)
     const combinedImages = [...(productData.images || []), ...imagePaths];
@@ -80,11 +89,18 @@ router.post('/products', verifyAdmin, upload.array('images', 10), async (req, re
 router.put('/products/:id', verifyAdmin, upload.array('images', 10), async (req, res) => {
   try {
     const productData = JSON.parse(req.body.productData);
-    const newImagePaths = req.files.map(file => {
-      let mime = file.mimetype;
-      if (!mime || mime === 'application/octet-stream') mime = 'image/jpeg';
-      return `data:${mime};base64,${file.buffer.toString('base64')}`;
+    
+    const uploadPromises = req.files.map(async (file) => {
+      const formData = new FormData();
+      formData.append('image', file.buffer.toString('base64'));
+      const apiKey = process.env.IMGBB_API_KEY;
+      if (!apiKey) throw new Error('IMGBB_API_KEY is not defined in environment variables');
+      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, formData, {
+        headers: formData.getHeaders()
+      });
+      return response.data.data.url;
     });
+    const newImagePaths = await Promise.all(uploadPromises);
     
     // We assume productData.images contains the existing images the user kept
     const combinedImages = [...(productData.images || []), ...newImagePaths];
