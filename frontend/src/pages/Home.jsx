@@ -377,13 +377,13 @@ export default function Home() {
                   <form onSubmit={submitOrder} className="checkout-form">
                     <input required type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} />
                     <input required type="text" name="phoneNo" placeholder="Phone Number" value={formData.phoneNo} onChange={(e) => setFormData({...formData, phoneNo: e.target.value})} />
-                    <input type="email" name="email" placeholder="Email Address (Optional)" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                     <input required type="text" name="houseNo" placeholder="House No." value={formData.houseNo} onChange={(e) => setFormData({...formData, houseNo: e.target.value})} />
                     <input required type="text" name="streetName" placeholder="Street Name / No." value={formData.streetName} onChange={(e) => setFormData({...formData, streetName: e.target.value})} />
                     <input required type="text" name="areaName" placeholder="Area Name" value={formData.areaName} onChange={(e) => setFormData({...formData, areaName: e.target.value})} />
                     <select name="city" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})}>
                       {config?.cities?.map((city, idx) => <option key={idx} value={city}>{city}</option>)}
                     </select>
+                    <input type="email" name="email" placeholder="Email Address (Optional)" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                     <button type="submit" className="btn submit-btn">Confirm Order</button>
                   </form>
                 </div>

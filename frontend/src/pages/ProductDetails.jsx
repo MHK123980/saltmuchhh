@@ -52,7 +52,7 @@ export default function ProductDetails() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '', phoneNo: '', houseNo: '', streetName: '', areaName: '', city: 'Karachi'
+    fullName: '', phoneNo: '', houseNo: '', streetName: '', areaName: '', city: 'Karachi', email: ''
   });
 
   useEffect(() => {
@@ -514,6 +514,7 @@ export default function ProductDetails() {
                     <select name="city" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})}>
                       {config.cities.map((city, idx) => <option key={idx} value={city}>{city}</option>)}
                     </select>
+                    <input type="email" name="email" placeholder="Email Address (Optional)" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                     <button type="submit" className="btn submit-btn">Confirm Order</button>
                   </form>
                 </div>
