@@ -29,9 +29,16 @@ export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState(() => {
+    const cachedProducts = JSON.parse(localStorage.getItem('saltmuchhh_products')) || [];
+    return cachedProducts.find(p => p._id === id) || null;
+  });
   const [config, setConfig] = useState(JSON.parse(localStorage.getItem('saltmuchhh_config')) || null);
-  const [mainImage, setMainImage] = useState('');
+  const [mainImage, setMainImage] = useState(() => {
+    const cachedProducts = JSON.parse(localStorage.getItem('saltmuchhh_products')) || [];
+    const found = cachedProducts.find(p => p._id === id);
+    return found && found.images && found.images.length > 0 ? found.images[0] : '/placeholder.jpg';
+  });
   
   const [variantIndex, setVariantIndex] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState([]);
@@ -266,7 +273,17 @@ export default function ProductDetails() {
 
   const storeOpen = checkStoreOpen();
 
-  if (!product || !config) return <div className="loading">Loading...</div>;
+  if (!product || !config) {
+    return (
+      <div className="oven-loader-container">
+        <div className="oven">
+          <div className="oven-door"></div>
+          <div className="oven-cookie"></div>
+        </div>
+        <p className="oven-text">Baking your cookies...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="product-page-container">
