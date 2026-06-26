@@ -154,6 +154,46 @@ router.put('/config', verifyAdmin, async (req, res) => {
   }
 });
 
+const sendOrderConfirmationEmail = async (email, orderNumber, deliveryTime, customerName) => {
+  try {
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span style="font-size: 50px;">✅</span>
+        </div>
+        <h2 style="color: #4caf50; text-align: center;">Order Confirmed!</h2>
+        <p style="font-size: 16px; color: #333;">Hi ${customerName},</p>
+        <p style="font-size: 16px; color: #333;">Thank you for ordering from <strong>Saltmuchhh</strong>. Your order has been successfully placed.</p>
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Order Number:</strong> ${orderNumber}</p>
+          <p style="margin: 5px 0;"><strong>Estimated Delivery:</strong> ${deliveryTime}</p>
+        </div>
+        <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+          Freshly Prepared, Handcrafted Daily. <br>
+          Team Saltmuchhh
+        </p>
+      </div>
+    `;
+
+    await axios.post('https://api.brevo.com/v3/smtp/email', {
+      sender: { name: 'Saltmuchhh', email: 'no-reply@saltmuchhh.com' },
+      to: [{ email: email, name: customerName }],
+      subject: 'Order Confirmed - Saltmuchhh',
+      htmlContent: htmlContent
+    }, {
+      headers: {
+        'accept': 'application/json',
+        'api-key': brevoApiKey,
+        'content-type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Error sending confirmation email:', error?.response?.data || error.message);
+  }
+};
+
 // --- ORDER ROUTES ---
 router.post('/orders', async (req, res) => {
   try {
@@ -170,6 +210,17 @@ router.post('/orders', async (req, res) => {
     
     await newOrder.save();
     const config = await Config.findOne();
+
+    // Send email asynchronously if email is provided
+    if (req.body.customerDetails && req.body.customerDetails.email) {
+      sendOrderConfirmationEmail(
+        req.body.customerDetails.email, 
+        counter.seq, 
+        config.timeDuration, 
+        req.body.customerDetails.fullName
+      );
+    }
+
     res.json({ success: true, message: 'Order Confirmed', timeDuration: config.timeDuration, orderNumber: counter.seq });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to place order' });
