@@ -178,7 +178,7 @@ const sendOrderConfirmationEmail = async (email, orderNumber, deliveryTime, cust
     `;
 
     await axios.post('https://api.brevo.com/v3/smtp/email', {
-      sender: { name: 'Saltmuchhh', email: 'no-reply@saltmuchhh.com' },
+      sender: { name: 'Saltmuchhh', email: 'saltmuchhh@gmail.com' },
       to: [{ email: email, name: customerName }],
       subject: 'Order Confirmed - Saltmuchhh',
       htmlContent: htmlContent
