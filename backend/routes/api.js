@@ -212,18 +212,58 @@ router.post('/orders', async (req, res) => {
     const config = await Config.findOne();
 
     // Send email asynchronously if email is provided
-    if (req.body.customerDetails && req.body.customerDetails.email) {
+    const email = req.body.customerDetails?.email;
+    console.log('Order placed. Customer email:', email || 'NOT PROVIDED');
+    
+    if (email && email.trim() !== '') {
+      console.log('Attempting to send confirmation email to:', email);
       sendOrderConfirmationEmail(
-        req.body.customerDetails.email, 
+        email, 
         counter.seq, 
         config.timeDuration, 
         req.body.customerDetails.fullName
-      );
+      ).then(() => {
+        console.log('Email sent successfully to:', email);
+      }).catch((err) => {
+        console.error('Email sending failed:', err?.response?.data || err.message);
+      });
     }
 
     res.json({ success: true, message: 'Order Confirmed', timeDuration: config.timeDuration, orderNumber: counter.seq });
   } catch (err) {
+    console.error('Order creation error:', err);
     res.status(500).json({ success: false, message: 'Failed to place order' });
+  }
+});
+
+// Test email endpoint (for debugging)
+router.post('/test-email', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  
+  try {
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    console.log('BREVO_API_KEY exists:', !!brevoApiKey);
+    console.log('BREVO_API_KEY starts with:', brevoApiKey ? brevoApiKey.substring(0, 10) + '...' : 'MISSING');
+    
+    const result = await axios.post('https://api.brevo.com/v3/smtp/email', {
+      sender: { name: 'Saltmuchhh', email: 'saltmuchhh@gmail.com' },
+      to: [{ email: email, name: 'Test User' }],
+      subject: 'Test Email - Saltmuchhh',
+      htmlContent: '<h2 style="color:green;">✅ Email is working!</h2><p>If you see this, Brevo integration is successful.</p>'
+    }, {
+      headers: {
+        'accept': 'application/json',
+        'api-key': brevoApiKey,
+        'content-type': 'application/json'
+      }
+    });
+    
+    console.log('Test email response:', result.data);
+    res.json({ success: true, message: 'Test email sent!', data: result.data });
+  } catch (error) {
+    console.error('Test email error:', error?.response?.data || error.message);
+    res.status(500).json({ success: false, error: error?.response?.data || error.message });
   }
 });
 
